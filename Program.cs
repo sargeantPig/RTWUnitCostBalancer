@@ -217,6 +217,7 @@ namespace RTWUnitCostBalancer
                 foreach (Unit unit in edu.units)
                 {
                     unit.cost[1] = (int)balancer.CalculateCost(unit);
+                    unit.cost[2] = (int)balancer.CalculateUpkeep(unit);
                     unit.cost[3] = (int)balancer.CalculateWepUpgrade(unit);
                     unit.cost[4] = (int)balancer.CalculateArmourUpgradeCost(unit);
                     unit.cost[5] = (int)balancer.CalculateCustomCost(unit);
