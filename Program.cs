@@ -136,18 +136,27 @@ namespace RTWUnitCostBalancer
         {
             Console.WriteLine("starting balancer...");
 
+            Balancer balancer = new Balancer();
+
             foreach (EDU edu in files)
             {
                 foreach (Unit unit in edu.units)
                 {
-                    unit.cost[4] = (unit.primaryArmour.stat_pri_armour[1] - 4) * (50 + 50);
-                    unit.cost[5] = (int)Math.Round(unit.cost[1] / 4.0);
+                    unit.cost[1] = (int)balancer.CalculateCost(unit);
+                    unit.cost[3] = (int)balancer.CalculateWepUpgrade(unit);
+                    unit.cost[4] = (int)balancer.CalculateArmourUpgradeCost(unit);
+                    unit.cost[5] = (int)balancer.CalculateCustomCost(unit);
+
                 }
             }
 
             Console.WriteLine("balancer complete");
 
         }
+
+       
+
+
 
         static bool ExportFiles(EDU[] files, string[] names)
         {
