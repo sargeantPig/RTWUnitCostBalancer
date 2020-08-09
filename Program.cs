@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.Design;
 using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RTWLib.Functions;
 using RTWLib.Functions.EDU;
 using RTWLib.Objects;
+using RTWTools;
 
 namespace RTWUnitCostBalancer
 {
@@ -18,6 +21,9 @@ namespace RTWUnitCostBalancer
         export,
         parse,
         balance,
+        refresh,
+        filelist,
+        stats,
         help
     }
 
@@ -33,25 +39,20 @@ namespace RTWUnitCostBalancer
             {commands.parse, "parse the files in the import folder"},
             {commands.balance, "balance the files that have been parsed" },
             {commands.export, "export the files to the export folder"},
+            {commands.refresh, "reload files - use if you've added more files to the import folder"},
+            {commands.filelist, "display  list of files loaded in (may not be parsed)"},
+            {commands.stats, "displays stats for the given file - cmd format 'stats fileIdx' " },
             {commands.help, "displays the command list" }
         };
 
         static void Main(string[] args)
         {
-            string[] files = GetFilesInDirectory(import);
-            string[] realNames = new string[files.Count()];
-
-            for(int i = 0; i < files.Count(); i++)
-                realNames[i] = files[i].Split('\\').Last();
-
-
-            EDU[] edus = new EDU[files.Count()];
-
-            for (int i = 0; i < edus.Count(); i++)
-                edus[i] = new EDU(true);
-
+            EDU[] edus;
+            string[] realNames;
+            string[] files = Refresh(out realNames, out edus);
 
             DisplayTitle();
+            DisplayFileList(realNames);
 
             string input;
             commands command;
@@ -59,19 +60,36 @@ namespace RTWUnitCostBalancer
             while (true)
             {
                 input = Console.ReadLine();
-                if (Enum.TryParse(input, out command))
+                if (Enum.TryParse(Functions_General.GetFirstWord(input), out command))
                 {
                     switch(command)
                     {
-                        case commands.doAll: DoAll(edus, files, realNames);
+                        case commands.doAll: 
+                            DoAll(edus, files, realNames);
+                            DisplayFileList(realNames);
                             break;
                         case commands.parse: 
                             ParseFiles(edus, files);
+                            DisplayFileList(realNames);
                             break;
                         case commands.help:
                             DisplayHelp();
                             break;
-                        case commands.balance: 
+                        case commands.refresh:
+                            files = Refresh(out realNames, out edus);
+                            DisplayFileList(realNames);
+                            break;
+                        case commands.balance:
+                            if (!BalanceFiles(edus))
+                                Console.WriteLine("files are not parsed!");
+                            DisplayFileList(realNames);
+                            break;
+                        case commands.filelist: 
+                            DisplayFileList(realNames);
+                            break;
+                        case commands.stats:
+                            if (!DisplayStats(input, edus))
+                                Console.WriteLine("Error, files may not be parsed or the index is invalid");
                             break;
                         case commands.export:
                             if (!ExportFiles(edus, realNames))
@@ -86,10 +104,63 @@ namespace RTWUnitCostBalancer
             }
         }
 
+        static string[] Refresh(out string[] names, out EDU[] edus)
+        {
+            string[] files = GetFilesInDirectory(import);
+            names = new string[files.Count()];
+
+            for (int i = 0; i < files.Count(); i++)
+                names[i] = files[i].Split('\\').Last();
+
+            edus = new EDU[files.Count()];
+
+            for (int i = 0; i < edus.Count(); i++)
+                edus[i] = new EDU(true);
+
+            return files;
+        }
+
+        static bool DisplayStats(string line, EDU[] edus)
+        {
+
+            if (!isParsed(edus))
+                return false;
+
+            int indx = 0;
+            string[] cmdSplit = line.Split(' ');
+            if (cmdSplit.Count() > 1)
+            {
+                if (!int.TryParse(cmdSplit[1].Trim(), out indx))
+                {
+                    Console.WriteLine("Invalid index");
+                    return false;
+                }
+            }
+
+            if (indx >= edus.Count() || indx < 0)
+                return false;
+
+            AnalysisData analysisData = new AnalysisData();
+            analysisData.Analyse(edus[indx]);
+            Console.WriteLine(analysisData.Print());
+
+            return true;
+        }
+
+        static void DisplayFileList(string[] names)
+        {
+            Console.WriteLine(
+                "###############################" + "\r\n" +
+                "########## File List ##########" + "\r\n" +
+                "###############################" + "\r\n");
+            Console.WriteLine(names.ArrayToString(true, true));
+        }
+
+
         static void DisplayTitle()
         {
             Console.WriteLine(
-                "###############################" + "r\n" +
+                "###############################" + "\r\n" +
                 "### RTW Unit Costs Balancer ###" + "\r\n" +
                 "##### Type help for help ######" + "\r\n" +
                 "###############################");
@@ -98,7 +169,7 @@ namespace RTWUnitCostBalancer
         static void DisplayHelp()
         {
             Console.WriteLine(
-                "############" + "r\n" +
+                "############" + "\r\n" +
                 "### HELP ###" + "\r\n" +
                 "############");
             foreach (var kv in help)
@@ -106,7 +177,7 @@ namespace RTWUnitCostBalancer
                 Console.WriteLine(kv.Key.ToString() + " -- " + kv.Value);
             }
             Console.WriteLine(
-                "################" + "r\n" +
+                "################" + "\r\n" +
                 "### END HELP ###" + "\r\n" +
                 "################");
         }
@@ -132,11 +203,14 @@ namespace RTWUnitCostBalancer
             ExportFiles(files, exportNames);
         }
 
-        static void BalanceFiles(EDU[] files)
+        static bool BalanceFiles(EDU[] files)
         {
             Console.WriteLine("starting balancer...");
 
             Balancer balancer = new Balancer();
+
+            if (!isParsed(files))
+                return false;
 
             foreach (EDU edu in files)
             {
@@ -146,12 +220,11 @@ namespace RTWUnitCostBalancer
                     unit.cost[3] = (int)balancer.CalculateWepUpgrade(unit);
                     unit.cost[4] = (int)balancer.CalculateArmourUpgradeCost(unit);
                     unit.cost[5] = (int)balancer.CalculateCustomCost(unit);
-
                 }
             }
 
             Console.WriteLine("balancer complete");
-
+            return true;
         }
 
        
@@ -161,11 +234,12 @@ namespace RTWUnitCostBalancer
         static bool ExportFiles(EDU[] files, string[] names)
         {
             Console.WriteLine("export starting...");
+
+            if (!isParsed(files))
+                return false;
+
             for (int i = 0; i < files.Count(); i++)
             {
-                if (files[i] == null)
-                    return false;
-
                 Console.WriteLine("exporting " + names[i]);
                 files[i].ToFile(export + names[i]);
             }
@@ -186,6 +260,17 @@ namespace RTWUnitCostBalancer
                 Console.WriteLine(names[i] + " -- success");
                 i++;
             }
+            Console.WriteLine("parsing complete");
+        }
+
+        static bool isParsed(EDU[] edus)
+        {
+            foreach (EDU edu in edus)
+            {
+                if (edu.units.Count == 0)
+                    return false;
+            }
+            return true;
         }
     }
 

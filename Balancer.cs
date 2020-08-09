@@ -22,9 +22,14 @@ namespace RTWUnitCostBalancer
 
         public float CalculateCost(Unit unit)
         {
-            return (float)Math.Round(GetSiegeVal(unit, 0.4f, 1.0f) * ((unit.soldier.number - 40) * 10+(GetPriAttk(unit)-5)*50 +(unit.primaryWeapon.attack[1]-4) 
-                * 20+unit.primaryWeapon.Missleattri[0]*2+GetAmmoValue(unit)+GetAP_Pri(unit)*20+GetSecAttkCostInfluence(unit)
-                +(GetAmmoValue(unit)-4)*40+(unit.primaryArmour.stat_pri_armour[1]-5)*20+(unit.primaryArmour.stat_pri_armour[2]-2)*20+(unit.mental.morale-7)*10+GetTrainingValue(unit)*20), 0);
+
+            return (float)Math.Round(GetSiegeVal(unit, 0.4f, 1.0f) * (unit.soldier.number / 40) * ((GetPriAttk(unit) - 5) * 50 + (unit.primaryWeapon.attack[1] - 4)
+                * 20 + unit.primaryWeapon.Missleattri[0] * 2 + GetAmmoValue(unit) + GetAP_Pri(unit) * 20 + GetSecAttkCostInfluence(unit)
+                + (GetAmmoValue(unit) - 4) * 40 + (unit.primaryArmour.stat_pri_armour[1] - 5) * 20 + (unit.primaryArmour.stat_pri_armour[2] - 2) * 20 + (unit.mental.morale - 7) * 10 + GetTrainingValue(unit) * 20), 0);
+            
+            /* return (float)Math.Round(GetSiegeVal(unit, 0.4f, 1.0f) * ((unit.soldier.number - 40) * 10+(GetPriAttk(unit)-5)*50 +(unit.primaryWeapon.attack[1]-4) 
+                 * 20+unit.primaryWeapon.Missleattri[0]*2+GetAmmoValue(unit)+GetAP_Pri(unit)*20+GetSecAttkCostInfluence(unit)
+                 +(GetAmmoValue(unit)-4)*40+(unit.primaryArmour.stat_pri_armour[1]-5)*20+(unit.primaryArmour.stat_pri_armour[2]-2)*20+(unit.mental.morale-7)*10+GetTrainingValue(unit)*20), 0);*/
         }
 
         public float CalculateUpkeep(Unit unit)
