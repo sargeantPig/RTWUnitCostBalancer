@@ -29,7 +29,7 @@ namespace RTWUnitCostBalancer
 
         public float CalculateUpkeep(Unit unit)
         {
-            return (int)Math.Round(CalculateArmourUpgradeCost(unit)/10.0f) * GetMercenaryVal(unit);
+            return (int)Math.Round(CalculateCost(unit)/10.0f) * GetMercenaryVal(unit);
         }
 
         public float CalculateWepUpgrade(Unit unit)
