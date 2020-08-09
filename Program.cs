@@ -228,10 +228,6 @@ namespace RTWUnitCostBalancer
             return true;
         }
 
-       
-
-
-
         static bool ExportFiles(EDU[] files, string[] names)
         {
             Console.WriteLine("export starting...");
