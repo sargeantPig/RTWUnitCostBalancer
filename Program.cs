@@ -140,9 +140,8 @@ namespace RTWUnitCostBalancer
             if (indx >= edus.Count() || indx < 0)
                 return false;
 
-            AnalysisData analysisData = new AnalysisData();
-            analysisData.Analyse(edus[indx]);
-            Console.WriteLine(analysisData.Print());
+
+            Console.WriteLine(GetAnalysis(edus[indx]).Print());
 
             return true;
         }
@@ -203,17 +202,24 @@ namespace RTWUnitCostBalancer
             ExportFiles(files, exportNames);
         }
 
+        static AnalysisData GetAnalysis(EDU edu)
+        {
+            AnalysisData analysisData = new AnalysisData();
+            analysisData.Analyse(edu);
+            return analysisData;
+        }
+
         static bool BalanceFiles(EDU[] files)
         {
             Console.WriteLine("starting balancer...");
-
-            Balancer balancer = new Balancer();
 
             if (!isParsed(files))
                 return false;
 
             foreach (EDU edu in files)
             {
+                AnalysisData ad = GetAnalysis(edu);
+                Balancer balancer = new Balancer(ad.atkMin, 4, 4, ad.defMin, 2, 7);
                 foreach (Unit unit in edu.units)
                 {
                     unit.cost[1] = (int)balancer.CalculateCost(unit);

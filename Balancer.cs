@@ -19,11 +19,11 @@ namespace RTWUnitCostBalancer
         int baseDefenceSkill;
         int baseShieldSkill;
         int baseMoraleValue;
-
+        int baseCost;
 
 
         public Balancer(int baseAttack = 5, int baseCharge = 4, int baseArmourValue = 4, 
-            int baseDefenceSkill = 5, int baseShieldSkill = 2, int baseMoraleSkill = 7)
+            int baseDefenceSkill = 5, int baseShieldSkill = 2, int baseMoraleSkill = 7, int baseCost = 500)
         {
             this.baseAttack = baseAttack;
             this.baseCharge = baseCharge;
@@ -31,25 +31,30 @@ namespace RTWUnitCostBalancer
             this.baseDefenceSkill = baseDefenceSkill;
             this.baseMoraleValue = baseMoraleSkill;
             this.baseShieldSkill = baseShieldSkill;
-
+            this.baseCost = baseCost;
         }
 
         public float CalculateCost(Unit unit)
         {
             return (float)Math.Round(
-                        GetSiegeVal(unit, 0.4f, 1.0f) *                                     //multiplier for siege engines
-                        (unit.soldier.number / 40) *                                             //quantity multiplier
-                        ((GetPriAttk(unit) - baseAttack) * 50                                             //primary attack, 5 is base attack, can be a variable
-                        + (unit.primaryWeapon.attack[1] - baseCharge) * 20                                //primary charge; 4 is a base charge, can be a variable
-                        + unit.primaryWeapon.Missleattri[0] * 2                                //missile distance factor
-                        + GetAmmoValue(unit) * (GetPriAttk(unit) - 5)                            //number of missiles factor
-                        + GetAP_Pri(unit) * 20                                                //factor from armor piercing attribute
-                        + GetSecAttkCostInfluence(unit)                                        //separate calculations for secondary weapon if exists
-                        + (unit.primaryArmour.stat_pri_armour[0] - baseArmourValue) * 40                                            //should be (unit.primaryArmour.stat_pri_armour[0]-4)*40    4 is a base armor value, can be a variable
-                        + (unit.primaryArmour.stat_pri_armour[1] - baseDefenceSkill) * 20                        //5 is a base defence skill value, can be a variable
-                        + (unit.primaryArmour.stat_pri_armour[2] - baseShieldSkill) * 20                        //2 is a base shield value, can be a variable
-                        + (unit.mental.morale - baseMoraleValue) * 10                                            //7 is a base morale value, can be a variable
-                        + GetTrainingValue(unit) * 20)                                        //training factor. 0 for untrained, 1 for trained, 2 for highly trained        
+                        GetSiegeVal(unit, 0.4f, 1.0f) *                                      //category. 1 for infantry, 0.4 for siege, 1.2 for cavalry. Ships use a separate formula
+                        (unit.soldier.number / 40) *                                           //quantity
+                        (GetPriAttk(unit) / baseAttack) *                           //pri attack
+                        (unit.primaryWeapon.attack[1] / baseCharge) *               //pri charge
+                        Math.Pow(unit.primaryWeapon.Missleattri[0], 1 / 4) *               //missile distance
+                        Math.Pow(GetAmmoValue(unit), 1 / 4) *                              //ammo
+                        Math.Pow(GetAP_Pri(unit), 1 / 2) *                                 //armor piercing. GetAP_Pri(unit) should return 2 if AP, and 1 if not
+                        Math.Pow(GetSecAttkCostInfluence(unit) / baseAttack, 1 / 2) *                             //sec attack ; if no sec, should be 1
+                        Math.Pow(unit.secondaryWeapon.attack[1] / baseCharge, 1 / 2) *               //sec charge; if no sec, should be 1
+                        unit.primaryArmour.stat_pri_armour[0] / baseArmourValue *                 //pri armor
+                        unit.primaryArmour.stat_pri_armour[1] / baseDefenceSkill *             //pri def skill
+                        unit.primaryArmour.stat_pri_armour[2] / baseShieldSkill *          //pri shield
+                        unit.mental.morale / baseMoraleValue *                             //morale value
+                        Math.Pow(GetTrainingValue(unit) * 20, 1 / 4) *                      //training. Function inside returns 0 for untrained, 1 for trained, 2 for highly_trained
+                        Math.Pow(unit.secondaryArmour.stat_sec_armour[0] / baseArmourValue, 1 / 4) *               //sec armor
+                        Math.Pow(unit.secondaryArmour.stat_sec_armour[1] / baseDefenceSkill, 1 / 4) *           //sec defence skill
+                        Math.Pow(unit.secondaryArmour.stat_sec_armour[2] / baseShieldSkill, 1 / 4) *        //sec shield    
+                        baseCost                                                            //base cost. Maybe 500?
                         , 0);
             /* return (float)Math.Round(GetSiegeVal(unit, 0.4f, 1.0f) * ((unit.soldier.number - 40) * 10+(GetPriAttk(unit)-5)*50 +(unit.primaryWeapon.attack[1]-4) 
                  * 20+unit.primaryWeapon.Missleattri[0]*2+GetAmmoValue(unit)+GetAP_Pri(unit)*20+GetSecAttkCostInfluence(unit)
