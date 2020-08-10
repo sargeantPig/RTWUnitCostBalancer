@@ -20,10 +20,10 @@ namespace RTWUnitCostBalancer
         int baseShieldSkill;
         int baseMoraleValue;
         int baseCost;
-
+        int baseHealth;
 
         public Balancer(int baseAttack = 5, int baseCharge = 4, int baseArmourValue = 4, 
-            int baseDefenceSkill = 5, int baseShieldSkill = 2, int baseMoraleSkill = 7, int baseCost = 500)
+            int baseDefenceSkill = 5, int baseShieldSkill = 2, int baseMoraleSkill = 7, int baseCost = 500, int baseHealth = 1)
         {
             this.baseAttack = baseAttack;
             this.baseCharge = baseCharge;
@@ -32,6 +32,7 @@ namespace RTWUnitCostBalancer
             this.baseMoraleValue = baseMoraleSkill;
             this.baseShieldSkill = baseShieldSkill;
             this.baseCost = baseCost;
+            this.baseHealth = baseHealth;
         }
 
         public float CalculateCost(Unit unit)
@@ -53,7 +54,8 @@ namespace RTWUnitCostBalancer
                         Math.Pow(GetTrainingValue(unit) * 20, 1 / 4) *                      //training. Function inside returns 0 for untrained, 1 for trained, 2 for highly_trained
                         Math.Pow(unit.secondaryArmour.stat_sec_armour[0] / baseArmourValue, 1 / 4) *               //sec armor
                         Math.Pow(unit.secondaryArmour.stat_sec_armour[1] / baseDefenceSkill, 1 / 4) *           //sec defence skill
-                        Math.Pow(unit.secondaryArmour.stat_sec_armour[2] / baseShieldSkill, 1 / 4) *        //sec shield    
+                        Math.Pow(unit.secondaryArmour.stat_sec_armour[2] / baseShieldSkill, 1 / 4) *            //sec shield  
+                        Math.Pow(unit.heatlh[0] / baseHealth, 1 / unit.heatlh[0]) *  
                         baseCost                                                            //base cost. Maybe 500?
                         , 0);
             /* return (float)Math.Round(GetSiegeVal(unit, 0.4f, 1.0f) * ((unit.soldier.number - 40) * 10+(GetPriAttk(unit)-5)*50 +(unit.primaryWeapon.attack[1]-4) 
