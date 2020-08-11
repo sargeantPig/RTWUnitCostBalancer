@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Dynamic;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,7 +24,7 @@ namespace RTWUnitCostBalancer
         int baseHealth;
 
         public Balancer(int baseAttack = 5, int baseCharge = 4, int baseArmourValue = 4, 
-            int baseDefenceSkill = 5, int baseShieldSkill = 2, int baseMoraleSkill = 7, int baseCost = 500, int baseHealth = 1)
+            int baseDefenceSkill = 5, int baseShieldSkill = 2, int baseMoraleSkill = 7, int baseCost = 1000, int baseHealth = 1)
         {
             this.baseAttack = baseAttack;
             this.baseCharge = baseCharge;
@@ -37,10 +38,10 @@ namespace RTWUnitCostBalancer
 
         public float CalculateCost(Unit unit)
         {
-            return (float)Math.Round(
+            float cost = (float)Math.Round((
                         GetSiegeVal(unit, 0.4f, 1.0f) *                                      //category. 1 for infantry, 0.4 for siege, 1.2 for cavalry. Ships use a separate formula
                         (unit.soldier.number / 40) *                                           //quantity
-                        (GetPriAttk(unit) / baseAttack) *                           //pri attack
+                        (GetPriAttk(unit) * baseAttack) *                           //pri attack
                         (unit.primaryWeapon.attack[1] / baseCharge) *               //pri charge
                         Math.Pow(unit.primaryWeapon.Missleattri[0], 1 / 4) *               //missile distance
                         Math.Pow(GetAmmoValue(unit), 1 / 4) *                              //ammo
@@ -53,11 +54,21 @@ namespace RTWUnitCostBalancer
                         unit.mental.morale / baseMoraleValue *                             //morale value
                         Math.Pow(GetTrainingValue(unit) * 20, 1 / 4) *                      //training. Function inside returns 0 for untrained, 1 for trained, 2 for highly_trained
                         Math.Pow(unit.secondaryArmour.stat_sec_armour[0] / baseArmourValue, 1 / 4) *               //sec armor
-                        Math.Pow(unit.secondaryArmour.stat_sec_armour[1] / baseDefenceSkill, 1 / 4) *           //sec defence skill
-                        Math.Pow(unit.secondaryArmour.stat_sec_armour[2] / baseShieldSkill, 1 / 4) *            //sec shield  
-                        Math.Pow(unit.heatlh[0] / baseHealth, 1 / unit.heatlh[0]) *  
-                        baseCost                                                            //base cost. Maybe 500?
-                        , 0);
+                        Math.Pow(unit.secondaryArmour.stat_sec_armour[1] / baseDefenceSkill, 1 / 4) *           //sec defence skill          //sec shield  
+                        Math.Pow(unit.heatlh[0] / baseHealth, 1 / 4) *
+                        Math.Pow(unit.heatlh[1] / baseHealth, 1 / 4) *
+                        Math.Pow(GetSpearBonus(unit), 1 / 4)) / 10 + 1 *
+                        baseCost
+                        //base cost. Maybe 500?
+                        , 0) ;
+
+            float phalmod = PhalanxModifier(unit, (int)cost);
+            cost += phalmod;
+            float pmod = precModifier(unit, (int)cost);
+
+            cost += pmod;
+
+            return cost * GetMoraleModifier(unit);
             /* return (float)Math.Round(GetSiegeVal(unit, 0.4f, 1.0f) * ((unit.soldier.number - 40) * 10+(GetPriAttk(unit)-5)*50 +(unit.primaryWeapon.attack[1]-4) 
                  * 20+unit.primaryWeapon.Missleattri[0]*2+GetAmmoValue(unit)+GetAP_Pri(unit)*20+GetSecAttkCostInfluence(unit)
                  +(GetAmmoValue(unit)-4)*40+(unit.primaryArmour.stat_pri_armour[1]-5)*20+(unit.primaryArmour.stat_pri_armour[2]-2)*20+(unit.mental.morale-7)*10+GetTrainingValue(unit)*20), 0);*/
@@ -202,7 +213,77 @@ namespace RTWUnitCostBalancer
             else return false;
         }
 
+        float precModifier(Unit unit, int value)
+        {
+            if (unit.priAttri.HasFlag(Stat_pri_attr.prec) || unit.secAttri.HasFlag(Stat_pri_attr.prec))
+                return 0.25f * value;
+            else return 0f;
+        }
 
+        float PhalanxModifier(Unit unit, int value)
+        {
+            if (unit.formation.FormationFlags.HasFlag(FormationTypes.phalanx))
+            {
+                return 0.20f * value;
+            }
+            else return 0f;
+        }
 
+        int GetSpearBonus(Unit unit)
+        {
+            switch (unit.priAttri)
+            {
+                case Stat_pri_attr.spear_bonus_2:
+                    return 2;
+                case Stat_pri_attr.spear_bonus_4:
+                    return 4;
+                case Stat_pri_attr.spear_bonus_6:
+                    return 6;
+                case Stat_pri_attr.spear_bonus_8:
+                    return 8;
+                case Stat_pri_attr.spear_bonus_10:
+                    return 10;
+                case Stat_pri_attr.spear_bonus_12:
+                    return 12;
+                default: break;
+            }
+
+            switch (unit.secAttri)
+            {
+                case Stat_pri_attr.spear_bonus_2:
+                    return 2;
+                case Stat_pri_attr.spear_bonus_4:
+                    return 4;
+                case Stat_pri_attr.spear_bonus_6:
+                    return 6;
+                case Stat_pri_attr.spear_bonus_8:
+                    return 8;
+                case Stat_pri_attr.spear_bonus_10:
+                    return 10;
+                case Stat_pri_attr.spear_bonus_12:
+                    return 12;
+                default: break;
+            }
+
+            return 0;
+        }
+
+        float GetMoraleModifier(Unit unit)
+        {
+            switch (unit.mental.discipline)
+            {
+                case Statmental_discipline.low:
+                    return 0.5f;
+                case Statmental_discipline.normal:
+                    return 0.80f;
+                case Statmental_discipline.impetuous:
+                    return 1f;
+                case Statmental_discipline.disciplined:
+                    return 1.2f;
+                case Statmental_discipline.berserker:
+                    return 1.75f;
+                default: return 1f;
+            }
+        }
     }
 }

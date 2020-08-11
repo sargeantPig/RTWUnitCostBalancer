@@ -219,7 +219,8 @@ namespace RTWUnitCostBalancer
             foreach (EDU edu in files)
             {
                 AnalysisData ad = GetAnalysis(edu);
-                Balancer balancer = new Balancer(ad.atkMin, 4, 4, ad.defMin, 2, 7);
+                Balancer balancer = new Balancer(baseAttack: 1, baseCharge:  4, baseArmourValue: 4, 
+                    baseDefenceSkill: 1, baseShieldSkill: 2, baseMoraleSkill: 7);
                 foreach (Unit unit in edu.units)
                 {
                     unit.cost[1] = (int)balancer.CalculateCost(unit);
