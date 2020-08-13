@@ -22,9 +22,11 @@ namespace RTWUnitCostBalancer
         int baseMoraleValue;
         int baseCost;
         int baseHealth;
-
+        int baseUpgradeWeapon;
+        int baseUpgradeArmour;
         public Balancer(int baseAttack = 5, int baseCharge = 4, int baseArmourValue = 4, 
-            int baseDefenceSkill = 5, int baseShieldSkill = 2, int baseMoraleSkill = 7, int baseCost = 1000, int baseHealth = 1)
+            int baseDefenceSkill = 5, int baseShieldSkill = 2, int baseMoraleSkill = 7, int baseCost = 1000, int baseHealth = 1,
+            int baseUpgradeArmour = 50, int baseUpgradeWeapon = 50)
         {
             this.baseAttack = baseAttack;
             this.baseCharge = baseCharge;
@@ -34,6 +36,8 @@ namespace RTWUnitCostBalancer
             this.baseShieldSkill = baseShieldSkill;
             this.baseCost = baseCost;
             this.baseHealth = baseHealth;
+            this.baseUpgradeArmour = baseUpgradeArmour;
+            this.baseUpgradeWeapon = baseUpgradeWeapon;
         }
 
         public float CalculateCost(Unit unit)
@@ -57,7 +61,7 @@ namespace RTWUnitCostBalancer
                         Math.Pow(unit.secondaryArmour.stat_sec_armour[1] / baseDefenceSkill, 1 / 4) *           //sec defence skill          //sec shield  
                         Math.Pow(unit.heatlh[0] / baseHealth, 1 / 4) *
                         Math.Pow(unit.heatlh[1] / baseHealth, 1 / 4) *
-                        Math.Pow(GetSpearBonus(unit), 1 / 4)) / 10 + 1 *
+                        Math.Pow(GetSpearBonus(unit), 1 / 4) + 1) /100 *
                         baseCost
                         //base cost. Maybe 500?
                         , 0) ;
@@ -81,7 +85,13 @@ namespace RTWUnitCostBalancer
 
         public float CalculateWepUpgrade(Unit unit)
         {
-            return (float)Math.Round(GetSiegeVal(unit, 1.0f, 1.1f) * (GetWepTypeValuePri(unit) * (GetPriAttk(unit) - 5) * 10 + GetAP_Pri(unit) * 2) * GetAmmoValue(unit) + GetSecondaryAttkMod(unit), 0);
+            return (float)Math.Round(
+                GetSiegeVal(unit, 1.0f, 1.1f) * 
+                (GetWepTypeValuePri(unit) * 
+                (GetPriAttk(unit) - 5) * 10 + 
+                GetAP_Pri(unit) * 2) * 
+                GetAmmoValue(unit) + 
+                GetSecondaryAttkMod(unit), 0);
         }
 
         public float CalculateCustomCost(Unit unit)
@@ -91,7 +101,14 @@ namespace RTWUnitCostBalancer
 
         public float CalculateArmourUpgradeCost(Unit unit)
         {
-            return (unit.primaryArmour.stat_pri_armour[1] - 4) * (50 + 50);
+            return (float)Math.Round((
+                        (unit.soldier.number / 40) *
+                        unit.primaryArmour.stat_pri_armour[0] / baseArmourValue *
+                        unit.primaryArmour.stat_pri_armour[1] / baseShieldSkill *
+                        Math.Pow(unit.secondaryArmour.stat_sec_armour[0] / baseArmourValue, 1 / 4) *
+                        Math.Pow(unit.secondaryArmour.stat_sec_armour[1] / baseShieldSkill, 1 / 4) + 1) *
+                        baseUpgradeArmour
+                        , 0);
         }
 
         float GetTrainingValue(Unit unit)
