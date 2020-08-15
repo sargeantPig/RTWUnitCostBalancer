@@ -25,7 +25,7 @@ namespace RTWUnitCostBalancer
         int baseUpgradeWeapon;
         int baseUpgradeArmour;
         public Balancer(int baseAttack = 5, int baseCharge = 4, int baseArmourValue = 4, 
-            int baseDefenceSkill = 5, int baseShieldSkill = 2, int baseMoraleSkill = 7, int baseCost = 1000, int baseHealth = 1,
+            int baseDefenceSkill = 5, int baseShieldSkill = 2, int baseMoraleSkill = 7, int baseCost = 100, int baseHealth = 1,
             int baseUpgradeArmour = 50, int baseUpgradeWeapon = 50)
         {
             this.baseAttack = baseAttack;
@@ -42,6 +42,7 @@ namespace RTWUnitCostBalancer
 
         public float CalculateCost(Unit unit)
         {
+            
             float cost = (float)Math.Round((
                         GetSiegeVal(unit, 0.4f, 1.0f) *                                      //category. 1 for infantry, 0.4 for siege, 1.2 for cavalry. Ships use a separate formula
                         (unit.soldier.number / 40) *                                           //quantity
@@ -244,6 +245,68 @@ namespace RTWUnitCostBalancer
                 return 0.20f * value;
             }
             else return 0f;
+        }
+
+
+        int GetWepAttr(Unit unit)
+        {
+            switch (unit.priAttri)
+            {
+                case Stat_pri_attr.ap:
+                    //return here
+                    break;
+                case Stat_pri_attr.area:
+                    break;
+                case Stat_pri_attr.bp:
+                    break;
+                case Stat_pri_attr.fire:
+                    break;
+                case Stat_pri_attr.launching:
+                    break;
+                case Stat_pri_attr.light_spear:
+                    break;
+                case Stat_pri_attr.long_pike:
+                    break;
+                case Stat_pri_attr.PA_no:
+                    break;
+                case Stat_pri_attr.pa_spear:
+                    break;
+                case Stat_pri_attr.pa_thrown:
+                    break;
+
+                ///etc
+            
+            }
+        
+        }
+
+        int GetWepAttrSec(Unit unit)
+        {
+            switch (unit.secAttri)
+            {
+                case Stat_pri_attr.ap:
+                    //return here
+                    break;
+                case Stat_pri_attr.area:
+                    break;
+                case Stat_pri_attr.bp:
+                    break;
+                case Stat_pri_attr.fire:
+                    break;
+                case Stat_pri_attr.launching:
+                    break;
+                case Stat_pri_attr.light_spear:
+                    break;
+                case Stat_pri_attr.long_pike:
+                    break;
+                case Stat_pri_attr.PA_no:
+                    break;
+                case Stat_pri_attr.pa_spear:
+                    break;
+                case Stat_pri_attr.pa_thrown:
+                    break;
+            }
+
         }
 
         int GetSpearBonus(Unit unit)
